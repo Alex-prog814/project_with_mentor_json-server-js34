@@ -6,12 +6,15 @@ let registerUserBtn = document.querySelector('#registerUser-btn');
 let loginUserBtn = document.querySelector('#loginUser-btn');
 let logoutUserBtn = document.querySelector('#logoutUser-btn');
 let closeModalBtn = document.querySelector('.btn-close');
+let showUsername = document.querySelector('#showUsername');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
 let passwordInp = document.querySelector('#reg-password');
 let passwordConfirmInp = document.querySelector('#reg-passwordConfirm');
 let isAdminInp = document.querySelector('#isAdmin');
+let loginUsernameInp = document.querySelector('#login-username');
+let loginPasswordInp = document.querySelector('#login-password');
 
 // account logic
 registerUserModalBtn.addEventListener('click', () => {
@@ -29,7 +32,7 @@ loginUserModalBtn.addEventListener('click', () => {
 });
 
 // register
-const USERS_API = 'http://localhost:3000/users';
+const USERS_API = 'http://localhost:8000/users';
 
 async function checkUniqueUsername(username) {
     let res = await fetch(USERS_API);
@@ -85,3 +88,53 @@ async function registerUser() {
 };
 
 registerUserBtn.addEventListener('click', registerUser);
+
+// login
+function checkUserInUsers(username, users) {
+    return users.some(item => item.username === username);
+};
+
+function checkUserPassword(user, password) {
+    return user.password === password;
+};
+
+function setUserToStorage(username, isAdmin) {
+    localStorage.setItem('user', JSON.stringify({
+        username,
+        isAdmin
+    }));
+};
+
+async function loginUser() {
+    if(
+        !loginUsernameInp.value.trim() ||
+        !loginPasswordInp.value.trim()
+    ) {
+        alert('Some inpits are empty!');
+        return;
+    };
+
+    let res = await fetch(USERS_API);
+    let users = await res.json();
+
+    if(!checkUserInUsers(loginUsernameInp.value, users)) {
+        alert('User not found!');
+        return;
+    };
+
+    let userObj = users.find(user => user.username === loginUsernameInp.value);
+
+    if(!checkUserPassword(userObj, loginPasswordInp.value)) {
+        alert('Wrong password!');
+        return;
+    };
+
+    setUserToStorage(userObj.username, userObj.isAdmin);
+
+    loginUsernameInp.value = '';
+    loginPasswordInp.value = '';
+
+    closeModalBtn.click();
+};
+
+loginUserBtn.addEventListener('click', loginUser);
