@@ -8,6 +8,9 @@ let logoutUserBtn = document.querySelector('#logoutUser-btn');
 let closeModalBtn = document.querySelector('.btn-close');
 let showUsername = document.querySelector('#showUsername');
 let adminPanel = document.querySelector('#admin-panel');
+let addProductBtn = document.querySelector('.add-product-btn');
+let saveChangesBtn = document.querySelector('.save-changes-btn');
+let productsList = document.querySelector('#products-list');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -16,6 +19,11 @@ let passwordConfirmInp = document.querySelector('#reg-passwordConfirm');
 let isAdminInp = document.querySelector('#isAdmin');
 let loginUsernameInp = document.querySelector('#login-username');
 let loginPasswordInp = document.querySelector('#login-password');
+let productTitle = document.querySelector('#product-title');
+let productPrice = document.querySelector('#product-price');
+let productDesc = document.querySelector('#product-desc');
+let productImage = document.querySelector('#product-image');
+let productCategory = document.querySelector('#product-category');
 
 // account logic
 registerUserModalBtn.addEventListener('click', () => {
@@ -154,6 +162,8 @@ async function loginUser() {
     checkLoginLogoutStatus();
 
     closeModalBtn.click();
+
+    render();
 };
 
 loginUserBtn.addEventListener('click', loginUser);
@@ -162,6 +172,7 @@ loginUserBtn.addEventListener('click', loginUser);
 logoutUserBtn.addEventListener('click', () => {
     localStorage.removeItem('user');
     checkLoginLogoutStatus();
+    render();
 });
 
 // product logic
@@ -178,3 +189,76 @@ function showAdminPanel() {
         adminPanel.setAttribute('style', 'display: flex !important;');
     };
 };
+
+// create
+const PRODUCTS_API = 'http://localhost:8000/products';
+
+function cleanAdminForm() {
+    productTitle.value = '';
+    productPrice.value = '';
+    productDesc.value = '';
+    productImage.value = '';
+    productCategory.value = '';
+};
+
+async function createProduct() {
+    if(
+        !productTitle.value.trim() ||
+        !productPrice.value.trim() ||
+        !productDesc.value.trim() ||
+        !productImage.value.trim() ||
+        !productCategory.value.trim()
+    ) {
+        alert('Some inputs are empty!');
+        return;
+    };
+
+    let productObj = {
+        title: productTitle.value,
+        price: productPrice.value,
+        desc: productDesc.value,
+        image: productImage.value,
+        category: productCategory.value
+    };
+
+    await fetch(PRODUCTS_API, {
+        method: 'POST',
+        body: JSON.stringify(productObj),
+        headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+        }
+    });
+
+    cleanAdminForm();
+
+    render();
+};
+
+addProductBtn.addEventListener('click', createProduct);
+
+// read
+async function render() {
+    productsList.innerHTML = '';
+    let res = await fetch(PRODUCTS_API);
+    let products = await res.json();
+    products.forEach(product => {
+        productsList.innerHTML += `
+        <div class="card m-5" style="width: 18rem;">
+            <img src="${product.image}" class="card-img-top" alt="error:(" height="200">
+            <div class="card-body">
+                <h5 class="card-title">${product.title}</h5>
+                <p class="card-text">${product.desc}</p>
+                <p class="card-text">${product.category}</p>
+                <p class="card-text">${product.price}$</p>
+                ${checkUserForProductCreate() ? 
+                `<a href="#" class="btn btn-dark btn-edit" id="edit-${product.id}">EDIT</a>
+                <a href="#" class="btn btn-danger btn-delete" id="del-${product.id}">DELETE</a>`
+                :
+                ''
+                }
+            </div>
+        </div>
+        `;
+    });
+};
+render();
