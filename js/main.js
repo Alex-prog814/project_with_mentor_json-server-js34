@@ -7,6 +7,7 @@ let loginUserBtn = document.querySelector('#loginUser-btn');
 let logoutUserBtn = document.querySelector('#logoutUser-btn');
 let closeModalBtn = document.querySelector('.btn-close');
 let showUsername = document.querySelector('#showUsername');
+let adminPanel = document.querySelector('#admin-panel');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -90,6 +91,22 @@ async function registerUser() {
 registerUserBtn.addEventListener('click', registerUser);
 
 // login
+function checkLoginLogoutStatus() {
+    let user = localStorage.getItem('user');
+    if(!user) {
+        loginUserModalBtn.parentNode.style.display = 'block';
+        logoutUserBtn.parentNode.style.display = 'none';
+        showUsername.innerText = 'No user';
+    } else {
+        loginUserModalBtn.parentNode.style.display = 'none';
+        logoutUserBtn.parentNode.style.display = 'block';
+        showUsername.innerText = JSON.parse(user).username;
+    };
+
+    showAdminPanel();
+};
+checkLoginLogoutStatus();
+
 function checkUserInUsers(username, users) {
     return users.some(item => item.username === username);
 };
@@ -134,7 +151,30 @@ async function loginUser() {
     loginUsernameInp.value = '';
     loginPasswordInp.value = '';
 
+    checkLoginLogoutStatus();
+
     closeModalBtn.click();
 };
 
 loginUserBtn.addEventListener('click', loginUser);
+
+// logout
+logoutUserBtn.addEventListener('click', () => {
+    localStorage.removeItem('user');
+    checkLoginLogoutStatus();
+});
+
+// product logic
+function checkUserForProductCreate() {
+    let user = JSON.parse(localStorage.getItem('user'));
+    if(user) return user.isAdmin;
+    return false;
+};
+
+function showAdminPanel() {
+    if(!checkUserForProductCreate()) {
+        adminPanel.setAttribute('style', 'display: none !important;');
+    } else {
+        adminPanel.setAttribute('style', 'display: flex !important;');
+    };
+};
