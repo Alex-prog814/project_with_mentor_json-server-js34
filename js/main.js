@@ -11,6 +11,7 @@ let adminPanel = document.querySelector('#admin-panel');
 let addProductBtn = document.querySelector('.add-product-btn');
 let saveChangesBtn = document.querySelector('.save-changes-btn');
 let productsList = document.querySelector('#products-list');
+let categoriesList = document.querySelector('.dropdown-menu');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -237,9 +238,15 @@ async function createProduct() {
 addProductBtn.addEventListener('click', createProduct);
 
 // read
+let category = '';
+
 async function render() {
+    let requestAPI = `${PRODUCTS_API}?category=${category}`;
+    if(!category) {
+        requestAPI = `${PRODUCTS_API}`;
+    };
     productsList.innerHTML = '';
-    let res = await fetch(PRODUCTS_API);
+    let res = await fetch(requestAPI);
     let products = await res.json();
     products.forEach(product => {
         productsList.innerHTML += `
@@ -264,6 +271,7 @@ async function render() {
     if(products.length === 0) return;
     addDeleteEvent();
     addEditEvent();
+    addCategoryToDropdownMenu();
 };
 render();
 
@@ -344,3 +352,31 @@ async function saveChanges(e) {
 };
 
 saveChangesBtn.addEventListener('click', saveChanges);
+
+async function addCategoryToDropdownMenu() {
+    let res = await fetch(PRODUCTS_API);
+    let data = await res.json();
+    let categories = new Set(data.map(product => product.category));
+    categoriesList.innerHTML = '<li><a class="dropdown-item" href="#">all</a></li>';
+    categories.forEach(category => {
+        categoriesList.innerHTML += `
+            <li><a class="dropdown-item" href="#">${category}</a></li>
+        `;
+    });
+    addClickEventOnDropdownItem();
+};
+
+function filterOnCategory(e) {
+    let categoryText = e.target.innerText;
+    if(categoryText === 'all') {
+        category = '';
+    } else {
+        category = categoryText;
+    };
+    render();
+};
+
+function addClickEventOnDropdownItem() {
+    let categoryItems = document.querySelectorAll('.dropdown-item');
+    categoryItems.forEach(item => item.addEventListener('click', filterOnCategory));
+};
