@@ -12,6 +12,7 @@ let addProductBtn = document.querySelector('.add-product-btn');
 let saveChangesBtn = document.querySelector('.save-changes-btn');
 let productsList = document.querySelector('#products-list');
 let categoriesList = document.querySelector('.dropdown-menu');
+let searchForm = document.querySelector('form');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -25,6 +26,7 @@ let productPrice = document.querySelector('#product-price');
 let productDesc = document.querySelector('#product-desc');
 let productImage = document.querySelector('#product-image');
 let productCategory = document.querySelector('#product-category');
+let searchInp = document.querySelector('#search-inp');
 
 // account logic
 registerUserModalBtn.addEventListener('click', () => {
@@ -239,11 +241,12 @@ addProductBtn.addEventListener('click', createProduct);
 
 // read
 let category = '';
+let search = '';
 
 async function render() {
-    let requestAPI = `${PRODUCTS_API}?category=${category}`;
+    let requestAPI = `${PRODUCTS_API}?q=${search}&category=${category}`;
     if(!category) {
-        requestAPI = `${PRODUCTS_API}`;
+        requestAPI = `${PRODUCTS_API}?q=${search}`;
     };
     productsList.innerHTML = '';
     let res = await fetch(requestAPI);
@@ -353,6 +356,7 @@ async function saveChanges(e) {
 
 saveChangesBtn.addEventListener('click', saveChanges);
 
+// filtering
 async function addCategoryToDropdownMenu() {
     let res = await fetch(PRODUCTS_API);
     let data = await res.json();
@@ -380,3 +384,10 @@ function addClickEventOnDropdownItem() {
     let categoryItems = document.querySelectorAll('.dropdown-item');
     categoryItems.forEach(item => item.addEventListener('click', filterOnCategory));
 };
+
+// search
+searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    search = searchInp.value;
+    render();
+});
