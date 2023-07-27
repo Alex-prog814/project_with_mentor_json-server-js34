@@ -260,5 +260,58 @@ async function render() {
         </div>
         `;
     });
+
+    if(products.length === 0) return;
+    addDeleteEvent();
+    addEditEvent();
 };
 render();
+
+// delete
+async function deleteProduct(e) {
+    let productId = e.target.id.split('-')[1];
+
+    await fetch(`${PRODUCTS_API}/${productId}`, {
+        method: 'DELETE'
+    });
+
+    render();
+};
+
+function addDeleteEvent() {
+    let deleteProductBtns = document.querySelectorAll('.btn-delete');
+    deleteProductBtns.forEach(btn => btn.addEventListener('click', deleteProduct));
+};
+
+// update
+function checkCreateAndSaveBtn() {
+    if(saveChangesBtn.id) {
+        addProductBtn.setAttribute('style', 'display: none;');
+        saveChangesBtn.setAttribute('style', 'display: block;');
+    } else {
+        addProductBtn.setAttribute('style', 'display: block;');
+        saveChangesBtn.setAttribute('style', 'display: none;');
+    };
+};
+checkCreateAndSaveBtn();
+
+async function addProductDataToForm(e) {
+    let productId = e.target.id.split('-')[1];
+    let res = await fetch(`${PRODUCTS_API}/${productId}`);
+    let productObj = await res.json();
+    
+    productTitle.value = productObj.title;
+    productPrice.value = productObj.price;
+    productDesc.value = productObj.desc;
+    productImage.value = productObj.image;
+    productCategory.value = productObj.category;
+
+    saveChangesBtn.setAttribute('id', productObj.id);
+
+    checkCreateAndSaveBtn();
+};
+
+function addEditEvent() {
+    let editProductBtns = document.querySelectorAll('.btn-edit');
+    editProductBtns.forEach(btn => btn.addEventListener('click', addProductDataToForm));
+};
