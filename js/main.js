@@ -315,3 +315,32 @@ function addEditEvent() {
     let editProductBtns = document.querySelectorAll('.btn-edit');
     editProductBtns.forEach(btn => btn.addEventListener('click', addProductDataToForm));
 };
+
+async function saveChanges(e) {
+    let updatedProductObj = {
+        id: e.target.id,
+        title: productTitle.value,
+        price: productPrice.value,
+        desc: productDesc.value,
+        image: productImage.value,
+        category: productCategory.value,
+    };
+
+    await fetch(`${PRODUCTS_API}/${e.target.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedProductObj),
+        headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+        }
+    });
+
+    cleanAdminForm();
+
+    saveChangesBtn.removeAttribute('id');
+
+    checkCreateAndSaveBtn();
+
+    render();
+};
+
+saveChangesBtn.addEventListener('click', saveChanges);
