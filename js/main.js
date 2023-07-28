@@ -16,6 +16,11 @@ let searchForm = document.querySelector('form');
 let prevPageBtn = document.querySelector('#prev-page-btn');
 let nextPageBtn = document.querySelector('#next-page-btn');
 let cartModalBtn = document.querySelector('#cartModal-btn');
+let closeCartBtn = document.querySelector('.btn-close-cart');
+let cartTable = document.querySelector('table');
+let createCartOrderBtn = document.querySelector('#create-cart-order-btn');
+let cleanCartBtn = document.querySelector('#clean-cart-btn')
+let cartTotalCost = document.querySelector('#cart-total-cost');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -441,12 +446,13 @@ nextPageBtn.addEventListener('click', () => {
     render();
 });
 
-// cart
+// cart logic
 function checkLoginUser() {
     let user = JSON.parse(localStorage.getItem('user'));
     return user;
 };
 
+// add product to cart
 async function getProductObjectById(productId) {
     let res = await fetch(`${PRODUCTS_API}/${productId}`);
     let productObj = await res.json();
@@ -500,3 +506,95 @@ function addCartEvent() {
     let cartBtns = document.querySelectorAll('.btn-cart');
     cartBtns.forEach(btn => btn.addEventListener('click', addProductToCart));
 };
+
+// render cart
+function cartRender() {
+    let cartObj = JSON.parse(localStorage.getItem('cart'));
+    if(!cartObj) {
+        cartTable.innerHTML = '<h3>No products in cart!</h3>';
+        cartTotalCost.innerText = 'Total cost: 0$';
+        return;
+    };
+    cartTable.innerHTML = `
+        <tr>
+            <th class="border border-dark">Image</th>
+            <th class="border border-dark">Title</th>
+            <th class="border border-dark">Count</th>
+            <th class="border border-dark">Price</th>
+            <th class="border border-dark">Total</th>
+            <th class="border border-dark">Delete</th>
+        </tr>
+    `;
+    cartObj.products.forEach(cartProduct => {
+        cartTable.innerHTML += `
+        <tr>
+            <td class="border border-dark">
+            <img src=${cartProduct.productItem.image} alt="error:(" width="50" height="50">
+            </td>
+            <td class="border border-dark">${cartProduct.productItem.title}</td>
+            <td class="border border-dark">${cartProduct.count}</td>
+            <td class="border border-dark">${cartProduct.productItem.price}</td>
+            <td class="border border-dark">${cartProduct.totalCost}</td>
+            <td class="border border-dark">
+            <button class="btn btn-danger del-cart-btn" id="cart-product-${cartProduct.productItem.id}">DELETE</button>
+            </td>
+        </tr>
+        `;
+    });
+    cartTotalCost.innerText = `Total cost: ${cartObj.totalCost}$`;
+    addDeleteEventForCartProduct();
+};
+
+cartModalBtn.addEventListener('click', cartRender);
+
+// remove product from cart
+function deleteProductFromCart(e) {
+    let productId = e.target.id.split('-');
+    productId = productId[productId.length - 1];
+    let cartObj = JSON.parse(localStorage.getItem('cart'));
+    cartObj.products = cartObj.products.filter(cartProduct => cartProduct.productItem.id != productId);
+    cartObj.totalCost = countCartTotalCost(cartObj.products);
+    if(cartObj.products.length === 0) {
+        localStorage.removeItem('cart');
+    } else {
+        localStorage.setItem('cart', JSON.stringify(cartObj));
+    };
+    cartRender();
+};
+
+function addDeleteEventForCartProduct() {
+    let delCartProductBtns = document.querySelectorAll('.del-cart-btn');
+    delCartProductBtns.forEach(btn => btn.addEventListener('click', deleteProductFromCart));
+};
+
+// create order
+const ORDERS_API = 'http://localhost:8000/orders';
+
+async function sendOrder(cartObj) {
+    await fetch(ORDERS_API, {
+        method: 'POST',
+        body: JSON.stringify(cartObj),
+        headers: {
+            "Content-Type": "application/json;charset=utf-8"
+        }
+    });
+};
+
+async function createOrder() {
+    let cartObj = JSON.parse(localStorage.getItem('cart'));
+    if(!cartObj) {
+        alert('No products in cart!');
+        return;
+    };
+    await sendOrder(cartObj);
+    localStorage.removeItem('cart');
+    cartRender();
+};
+
+createCartOrderBtn.addEventListener('click', createOrder);
+
+// clean cart
+cleanCartBtn.addEventListener('click', () => {
+    localStorage.removeItem('cart');
+    cartRender();
+});
