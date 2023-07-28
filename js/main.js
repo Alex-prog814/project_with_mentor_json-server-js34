@@ -15,6 +15,7 @@ let categoriesList = document.querySelector('.dropdown-menu');
 let searchForm = document.querySelector('form');
 let prevPageBtn = document.querySelector('#prev-page-btn');
 let nextPageBtn = document.querySelector('#next-page-btn');
+let cartModalBtn = document.querySelector('#cartModal-btn');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -110,10 +111,12 @@ function checkLoginLogoutStatus() {
         loginUserModalBtn.parentNode.style.display = 'block';
         logoutUserBtn.parentNode.style.display = 'none';
         showUsername.innerText = 'No user';
+        cartModalBtn.parentNode.style.display = 'none';
     } else {
         loginUserModalBtn.parentNode.style.display = 'none';
         logoutUserBtn.parentNode.style.display = 'block';
         showUsername.innerText = JSON.parse(user).username;
+        cartModalBtn.parentNode.style.display = 'block';
     };
 
     showAdminPanel();
@@ -176,6 +179,7 @@ loginUserBtn.addEventListener('click', loginUser);
 // logout
 logoutUserBtn.addEventListener('click', () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('cart');
     checkLoginLogoutStatus();
     render();
 });
@@ -269,6 +273,12 @@ async function render() {
                 :
                 ''
                 }
+                ${checkLoginUser() ? `
+                    <a href="#" class="btn btn-success btn-cart" id="cart-${product.id}">TO CART</a>
+                `
+                :
+                ''
+                }
             </div>
         </div>
         `;
@@ -278,6 +288,7 @@ async function render() {
     addDeleteEvent();
     addEditEvent();
     addCategoryToDropdownMenu();
+    addCartEvent();
 };
 render();
 
@@ -429,3 +440,63 @@ nextPageBtn.addEventListener('click', () => {
     checkPages();
     render();
 });
+
+// cart
+function checkLoginUser() {
+    let user = JSON.parse(localStorage.getItem('user'));
+    return user;
+};
+
+async function getProductObjectById(productId) {
+    let res = await fetch(`${PRODUCTS_API}/${productId}`);
+    let productObj = await res.json();
+    return productObj;
+};
+
+function countCartTotalCost(products) {
+    let cartTotalCost = products.reduce((acc, currentItem) => {
+        return acc + currentItem.totalCost;
+    }, 0);
+    return cartTotalCost;
+};
+
+function addNewProductToCart(productCartObj) {
+    let cartObj = JSON.parse(localStorage.getItem('cart'));
+    cartObj.products.push(productCartObj);
+    cartObj.totalCost = countCartTotalCost(cartObj.products);
+    localStorage.setItem('cart', JSON.stringify(cartObj));
+};
+
+function addCartObjToLocalStorage() {
+    let cartOwner = JSON.parse(localStorage.getItem('user'));
+    let cartObj = {
+        id: Date.now(),
+        owner: cartOwner.username,
+        totalCost: 0,
+        products: []
+    };
+    localStorage.setItem('cart', JSON.stringify(cartObj));
+};
+
+async function addProductToCart(e) {
+    let productId = e.target.id.split('-')[1];
+    let productObj = await getProductObjectById(productId);
+    let cartProductCount = +prompt('Enter product count for cart');
+    let productCartObj = {
+        count: cartProductCount,
+        totalCost: +productObj.price * cartProductCount,
+        productItem: productObj
+    };
+    let cartObj = JSON.parse(localStorage.getItem('cart'));
+    if(cartObj) {
+        addNewProductToCart(productCartObj);
+    } else {
+        addCartObjToLocalStorage();
+        addNewProductToCart(productCartObj);
+    };
+};
+
+function addCartEvent() {
+    let cartBtns = document.querySelectorAll('.btn-cart');
+    cartBtns.forEach(btn => btn.addEventListener('click', addProductToCart));
+};
