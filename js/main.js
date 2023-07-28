@@ -13,6 +13,8 @@ let saveChangesBtn = document.querySelector('.save-changes-btn');
 let productsList = document.querySelector('#products-list');
 let categoriesList = document.querySelector('.dropdown-menu');
 let searchForm = document.querySelector('form');
+let prevPageBtn = document.querySelector('#prev-page-btn');
+let nextPageBtn = document.querySelector('#next-page-btn');
 // inputs group
 let usernameInp = document.querySelector('#reg-username');
 let ageInp = document.querySelector('#reg-age');
@@ -242,11 +244,12 @@ addProductBtn.addEventListener('click', createProduct);
 // read
 let category = '';
 let search = '';
+let currentPage = 1;
 
 async function render() {
-    let requestAPI = `${PRODUCTS_API}?q=${search}&category=${category}`;
+    let requestAPI = `${PRODUCTS_API}?q=${search}&category=${category}&_page=${currentPage}&_limit=2`;
     if(!category) {
-        requestAPI = `${PRODUCTS_API}?q=${search}`;
+        requestAPI = `${PRODUCTS_API}?q=${search}&_page=${currentPage}&_limit=2`;
     };
     productsList.innerHTML = '';
     let res = await fetch(requestAPI);
@@ -389,5 +392,40 @@ function addClickEventOnDropdownItem() {
 searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     search = searchInp.value;
+    render();
+});
+
+// pagination
+async function getPagesCount() {
+    let res = await fetch(PRODUCTS_API);
+    let products = await res.json();
+    let pagesCount = Math.ceil(products.length / 2);
+    return pagesCount;
+};
+
+async function checkPages() {
+    let maxPagesNum = await getPagesCount();
+    if(currentPage === 1) {
+        prevPageBtn.setAttribute('style', 'display: none;');
+        nextPageBtn.setAttribute('style', 'display: block;');
+    } else if(currentPage === maxPagesNum) {
+        prevPageBtn.setAttribute('style', 'display: block;');
+        nextPageBtn.setAttribute('style', 'display: none;');
+    } else {
+        prevPageBtn.setAttribute('style', 'display: block;');
+        nextPageBtn.setAttribute('style', 'display: block;');
+    };
+};
+checkPages();
+
+prevPageBtn.addEventListener('click', () => {
+    currentPage--;
+    checkPages();
+    render();
+});
+
+nextPageBtn.addEventListener('click', () => {
+    currentPage++;
+    checkPages();
     render();
 });
